@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": " ",
+    "database": "recetasdb",
+    "host": "localhost",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "postgres",
+    "password": " ",
+    "database": "recetasdb_test",
+    "host": "localhost",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "postgres",
+    "password": " ",
+    "database": "recetasdb_prod",
+    "host": "localhost",
+    "dialect": "postgres"
+  }
+}
