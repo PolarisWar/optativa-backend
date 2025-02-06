@@ -186,7 +186,7 @@ router.get('/recetas/:id', async (req, res) => {
 
 router.post('/usuarios', async (req, res) => {
   try {
-    const nuevoUsuario = await usuarioController.agregarUsuario(req.body.userName, req.body.password, req.body.correoElectronico, req.body.rol);
+    const nuevoUsuario = await usuarioController.agregarUsuario(req.body.username, req.body.email, req.body.password, req.body.rol);
     res.json(nuevoUsuario);
   } catch (error) {
     res.status(400).json({ error: error.message });

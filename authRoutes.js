@@ -65,30 +65,16 @@ router.post("/auth/refreshToken", async (req, res, next) => {
 
 router.post("/auth/register", async (req, res, next) => {
   try {
-    try {
-      const { username, email, password, rol } = req.body;
-      //aqui son los datos de tu modelo 
+    const { username, email, password, rol } = req.body;
 
-      if (
-        !username ||
-        !email ||
-        !password
-
-      ) {
-        throw new AppError("All fields are required", 400);
-      }
-
-      const hashedPassword = await hashPassword(password);
-      let user = await agregarUsuario(username, email, hashedPassword, rol);
-
-
-
-      res.status(201).json(user);
-    } catch (error) {
-
-      next(error);
-
+    if (!username || !email || !password) {
+      throw new AppError("All fields are required", 400);
     }
+
+    const hashedPassword = await hashPassword(password);
+    let user = await agregarUsuario(username, email, hashedPassword, rol);
+
+    res.status(201).json(user);
   } catch (error) {
     next(error);
   }
