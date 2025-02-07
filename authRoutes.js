@@ -41,13 +41,13 @@ router.post("/auth/register", async (req, res, next) => {
     }
 
     const hashedPassword = await hashPassword(password);
-    let user = await agregarUsuario(userName, hashedPassword, correoElectronico, rol);
+    let usuario = await agregarUsuario(userName, hashedPassword, correoElectronico, rol);
 
     const userResponse = {
-      id: user.id,
-      userName: user.userName,
-      correoElectronico: user.correoElectronico,
-      rol: user.rol
+      id: usuario.id,
+      userName: usuario.userName,
+      correoElectronico: usuario.correoElectronico,
+      rol: usuario.rol
     };
 
     res.status(201).json(userResponse);
