@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const authenticateToken = require('./middlewares/authenticateToken'); // Importa el middleware
+const authenticateToken = require('./middlewares/authenticateToken');
 
 // Importar los controladores
 const usuarioController = require('./controllers/usuarioController');
@@ -8,15 +8,29 @@ const recetasController = require('./controllers/recetasController');
 const ingredientesController = require('./controllers/ingredientesController');
 const categoriasController = require('./controllers/categoriasController');
 
-
-
-// Rutas protegidas
-router.use(authenticateToken);
-
 // Importar los middlewares de validación
 const validateIngredienteData = require('./middlewares/validateIngredienteData');
 const validateCategoriaData = require('./middlewares/validateCategoriaData');
 const validateRecetaData = require('./middlewares/validateRecetaData');
+
+// Rutas públicas (sin autenticación)
+router.post('/usuarios', async (req, res) => {
+  try {
+    console.log(req.body);
+    const nuevoUsuario = await usuarioController.agregarUsuario(
+      req.body.userName, 
+      req.body.correoElectronico, 
+      req.body.password, 
+      req.body.rol
+    );
+    res.json(nuevoUsuario);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Aplicar middleware de autenticación para todas las rutas siguientes
+router.use(authenticateToken);
 
 // Ruta para agregar una nueva categoría
 router.post('/categorias', validateCategoriaData, async (req, res) => {
@@ -181,15 +195,6 @@ router.get('/recetas/:id', async (req, res) => {
     res.status(200).json(receta);
   } catch (error) {
     res.status(404).json({ error: error.message });
-  }
-});
-
-router.post('/usuarios', async (req, res) => {
-  try {
-    const nuevoUsuario = await usuarioController.agregarUsuario(req.body.username, req.body.email, req.body.password, req.body.rol);
-    res.json(nuevoUsuario);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
   }
 });
 
@@ -484,7 +489,6 @@ router.get('/ingredientes/:id', async (req, res) => {
   }
 });
 
-
 /**
  * @swagger
  * /categorias/{id}:
@@ -664,132 +668,5 @@ router.put('/recetas/:id', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-/**
- * @swagger
- * /usuarios:
- *   post:
- *     summary: Agregar un nuevo usuario
- *     tags: [Usuarios]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               userName:
- *                 type: string
- *               password:
- *                 type: string
- *               correoElectronico:
- *                 type: string
- *               rol:
- *                 type: string
- *     responses:
- *       201:
- *         description: Usuario creado exitosamente
- *       400:
- *         description: Error al crear el usuario
- */
-router.post('/usuarios', usuarioController.agregarUsuario);
-
-/**
- * @swagger
- * /usuarios:
- *   get:
- *     summary: Obtener todos los usuarios
- *     tags: [Usuarios]
- *     responses:
- *       200:
- *         description: Lista de usuarios
- *       500:
- *         description: Error al obtener los usuarios
- */
-router.get('/usuarios', usuarioController.mostrarUsuarios);
-
-/**
- * @swagger
- * /usuarios/{id}:
- *   get:
- *     summary: Obtener un usuario por ID
- *     tags: [Usuarios]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID del usuario
- *     responses:
- *       200:
- *         description: Usuario obtenido exitosamente
- *       404:
- *         description: Usuario no encontrado
- */
-router.get('/usuarios/:id', usuarioController.obtenerUsuarioPorId);
-
-/**
- * @swagger
- * /usuarios/{id}:
- *   put:
- *     summary: Actualizar un usuario
- *     tags: [Usuarios]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID del usuario a actualizar
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               userName:
- *                 type: string
- *               password:
- *                 type: string
- *               correoElectronico:
- *                 type: string
- *               rol:
- *                 type: string
- *     responses:
- *       200:
- *         description: Usuario actualizado exitosamente
- *       404:
- *         description: Usuario no encontrado
- *       500:
- *         description: Error al actualizar el usuario
- */
-router.put('/usuarios/:id', usuarioController.actualizarUsuario);
-
-/**
- * @swagger
- * /usuarios/{id}:
- *   delete:
- *     summary: Eliminar un usuario
- *     tags: [Usuarios]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID del usuario a eliminar
- *     responses:
- *       200:
- *         description: Usuario eliminado exitosamente
- *       404:
- *         description: Usuario no encontrado
- *       500:
- *         description: Error al eliminar el usuario
- */
-router.delete('/usuarios/:id', usuarioController.eliminarUsuario);
-
-
 
 module.exports = router;

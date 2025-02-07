@@ -1,12 +1,15 @@
-const bcrypt = require('bcrypt');
 const Usuario = require('../models/usuarios');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
+const { hashPassword, comparePassword } = require('../helpers/hashPass');
 
 const agregarUsuario = async (userName, password, correoElectronico, rol) => {
   try {
-    const saltRounds = 10;
-    const hash = await bcrypt.hash(password, saltRounds);
+
+    console.log(userName, password, correoElectronico, rol)
+
+    const hash = await hashPassword(password);
+
 
     const nuevoUsuario = await Usuario.create({
       userName,
@@ -80,7 +83,8 @@ const iniciarSesion = async (userName, password) => {
       throw new Error('Usuario no encontrado');
     }
 
-    const isValidPassword = await bcrypt.compare(password, usuario.password);
+    const isValidPassword = await comparePassword(password, usuario.password);
+
 
     if (!isValidPassword) {
       throw new Error('Contraseña incorrecta');

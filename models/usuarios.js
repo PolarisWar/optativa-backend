@@ -17,9 +17,7 @@ const Usuario = sequelize.define("usuario", {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
-    validate: {
-      isEmail: true
-    }
+
   },
   rol: {
     type: DataTypes.ENUM,
