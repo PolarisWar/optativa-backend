@@ -12,13 +12,9 @@ const { obtenerUsuarioPorId, agregarUsuario } = require("./controllers/usuarioCo
 const { hashPassword } = require("./helpers/hashPass");
 const authenticateToken = require("./middlewares/authenticateToken");
 
-
-
-
-
+// Rutas públicas (sin autenticación)
 router.post("/auth/login", async (req, res, next) => {
   try {
-    console.log(req.body)
     const { credentials, password } = req.body;
 
     if (!credentials || !password) {
@@ -31,6 +27,30 @@ router.post("/auth/login", async (req, res, next) => {
       accessToken,
       refreshToken,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/auth/register", async (req, res, next) => {
+  try {
+    const { userName, correoElectronico, password, rol } = req.body;
+
+    if (!userName || !correoElectronico || !password) {
+      throw new AppError("All fields are required", 400);
+    }
+
+    const hashedPassword = await hashPassword(password);
+    let user = await agregarUsuario(userName, hashedPassword, correoElectronico, rol);
+
+    const userResponse = {
+      id: user.id,
+      userName: user.userName,
+      correoElectronico: user.correoElectronico,
+      rol: user.rol
+    };
+
+    res.status(201).json(userResponse);
   } catch (error) {
     next(error);
   }
@@ -63,123 +83,55 @@ router.post("/auth/refreshToken", async (req, res, next) => {
   }
 });
 
-router.post("/auth/register", async (req, res, next) => {
+// Middleware de autenticación para las rutas protegidas
+router.use(authenticateToken);
+
+// Rutas protegidas (requieren autenticación)
+router.get("/session", async (req, res, next) => {
   try {
-    const { username, email, password, rol } = req.body;
-
-    if (!username || !email || !password) {
-      throw new AppError("All fields are required", 400);
-    }
-
-    const hashedPassword = await hashPassword(password);
-    let user = await agregarUsuario(username, email, hashedPassword, rol);
-
-    res.status(201).json(user);
+    const sessionData = await obtenerUsuarioPorId(req.userData.userId);
+    res.status(200).json(sessionData);
   } catch (error) {
     next(error);
   }
 });
 
-router.use(authenticateToken);
-
-
-router.get(
-  "/session",
-
-  async (req, res, next) => {
-    try {
-      console.log(req.userData)
-      const sessionData = await obtenerUsuarioPorId(req.userData.userId);
-      res.status(200).json(sessionData);
-    } catch (error) {
-      next(error);
-    }
-
+router.post("/auth/logout", async (req, res, next) => {
+  try {
+    const result = await logout(req.userData.userId);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
   }
-);
+});
 
-
-
-router.post(
-  "/auth/logout",
-  authenticateToken,
-  async (req, res, next) => {
-    try {
-      const result = await logout(req.userData.userId);
-      
-      res.status(200).json(result);
-    } catch (error) {
-      next(error);
-    }
+router.post("/auth/2fa/generate", async (req, res, next) => {
+  try {
+    const { secret, qrCode } = await generateTwoFactorSecret(req.userData.id);
+    res.json({ secret, qrCode });
+  } catch (error) {
+    next(error);
   }
-);
+});
 
-
-
-
-
-router.post(
-  "/auth/2fa/generate",
-
-  async (req, res, next) => {
-    try {
-
-      const { secret, qrCode } = await generateTwoFactorSecret(
-        req.userData.id
-      );
-      res.json({ secret, qrCode });
-    } catch (error) {
-      next(error);
-    }
+router.post("/auth/2fa/verify", async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    await verifyTwoFactorToken(req.userData.id, code);
+    res.json({ message: "2FA activado exitosamente" });
+  } catch (error) {
+    next(error);
   }
-);
+});
 
-
-router.post(
-  "/auth/2fa/verify",
-
-  async (req, res, next) => {
-    try {
-      const { code } = req.body;
-      const authHeader = req.headers.authorization;
-
-      if (!authHeader) {
-        return next(new AppError("Token must me provide", 401));
-      }
-      const token = authHeader.split(" ")[1];
-
-      await verifyTwoFactorToken(req.userData.id, code);
-
-      res.json({ message: "2FA activado exitosamente" });
-    } catch (error) {
-      next(error);
-    }
+router.post("/auth/2fa/validate", async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    const result = await validateTwoFactorToken(req.userData.id, code);
+    res.json(result);
+  } catch (error) {
+    next(error);
   }
-);
-
-
-router.post(
-  "/auth/2fa/validate",
-
-  async (req, res, next) => {
-    try {
-      const { code } = req.body;
-      const authHeader = req.headers.authorization;
-
-      if (!authHeader) {
-        return next(new AppError("Token debe ser proporcionado", 401));
-      }
-      const token = authHeader.split(" ")[1];
-
-      const result = await validateTwoFactorToken(
-        req.userData.id,
-        code
-      );
-      res.json(result);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+});
 
 module.exports = router;
