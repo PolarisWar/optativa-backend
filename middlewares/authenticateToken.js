@@ -20,17 +20,23 @@ const authenticateToken = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userData = decoded;
     
     const usuario = await Usuario.findByPk(decoded.id);
     if (!usuario) {
       return res.status(403).json({ error: 'Usuario no encontrado' });
     }
+
+    // Permitir acceso a /session para todos los usuarios autenticados
+    if (req.url === '/session') {
+      req.userData = { userId: decoded.id, rol: usuario.rol };
+      return next();
+    }
+
+    // Resto de la lógica de autorización para otras rutas
     if (usuario.rol === 'admin') {
       req.userData = { userId: decoded.id, rol: 'admin' };
       next();
     } else if (usuario.rol === 'usuario') {
-      // Aquí puedes agregar una condición para verificar si el usuario tiene permiso para acceder al recurso
       if (req.url === '/recetas' || req.url === '/categorias' || req.url === '/ingredientes') {
         req.userData = { userId: decoded.id, rol: 'usuario' };
         next();

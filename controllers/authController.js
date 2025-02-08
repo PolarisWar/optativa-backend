@@ -50,14 +50,11 @@ const verifyTwoFactorToken = async (userID, code) => {
   );
 };
 
-
-
 const login = async (credentials, password) => {
   const user = await Users.findOne({
     where: {
       [Op.or]: [{ userName: credentials }, { correoElectronico: credentials }],
     },
-
   });
 
   if (!user) {
@@ -70,35 +67,26 @@ const login = async (credentials, password) => {
     throw new AppError("Credenciales inválidas", 401);
   }
 
-  // Crear payload para el JWT
   const payload = {
     id: user.id,
-    username: user.username,
-    email: user.email,
-    role: user.role,
+    userName: user.userName,
+    email: user.correoElectronico,
+    rol: user.rol
   };
 
-  console.log("generando acces token")
-  // Generar ambos tokens
   const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "1h", // token de acceso de corta duración
+    expiresIn: "1h",
   });
-  console.log("acces token: ", accessToken)
-  
-  console.log("generando refresh token")
 
   const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: "7d", // token de refresco de larga duración
+    expiresIn: "7d",
   });
-
-  console.log("refresh token: ", refreshToken)
 
   return {
     accessToken,
     refreshToken,
   };
 };
-
 
 const refreshToken = async (refreshTokenProvided) => {
   const decoded = jwt.verify(
@@ -108,7 +96,6 @@ const refreshToken = async (refreshTokenProvided) => {
 
   const user = await Users.findOne({
     where: { id: decoded.id },
-
   });
 
   if (!user) {
