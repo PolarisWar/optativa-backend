@@ -54,7 +54,7 @@ router.post("/auth/register", async (req, res, next) => {
 
     // Si no se especifica rol, será "usuario" por defecto
     const userRole = rol || "usuario";
-    
+
     // Verificar que el rol sea válido
     if (!["admin", "usuario"].includes(userRole)) {
       throw new AppError("Rol inválido", 400);
@@ -62,23 +62,10 @@ router.post("/auth/register", async (req, res, next) => {
 
     // Hashear la contraseña antes de enviarla al controlador
     const hashedPassword = await hashPassword(password);
-    
+
     let usuario = await agregarUsuario(userName, hashedPassword, correoElectronico, userRole);
 
-    // Generar tokens usando la contraseña original (no la hasheada)
-    const { accessToken, refreshToken } = await login(userName, password);
-
-    // Preparar respuesta sin exponer datos sensibles
-    const userResponse = {
-      id: usuario.id,
-      userName: usuario.userName,
-      correoElectronico: usuario.correoElectronico,
-      rol: usuario.rol,
-      accessToken,
-      refreshToken
-    };
-
-    res.status(201).json(userResponse);
+    res.status(201).json(usuario);
   } catch (error) {
     // Manejar errores específicos
     if (error.name === 'SequelizeUniqueConstraintError') {
@@ -92,6 +79,7 @@ router.post("/auth/register", async (req, res, next) => {
     next(error);
   }
 });
+
 
 router.post("/auth/refreshToken", async (req, res, next) => {
   try {
