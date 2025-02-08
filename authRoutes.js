@@ -36,22 +36,59 @@ router.post("/auth/register", async (req, res, next) => {
   try {
     const { userName, correoElectronico, password, rol } = req.body;
 
+    // Validación básica
     if (!userName || !correoElectronico || !password) {
-      throw new AppError("All fields are required", 400);
+      throw new AppError("Nombre de usuario, correo y contraseña son requeridos", 400);
     }
 
-    const hashedPassword = await hashPassword(password);
-    let usuario = await agregarUsuario(userName, hashedPassword, correoElectronico, rol);
+    // Validar formato de correo
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(correoElectronico)) {
+      throw new AppError("Formato de correo electrónico inválido", 400);
+    }
 
+    // Validar longitud mínima de contraseña
+    if (password.length < 6) {
+      throw new AppError("La contraseña debe tener al menos 6 caracteres", 400);
+    }
+
+    // Si no se especifica rol, será "usuario" por defecto
+    const userRole = rol || "usuario";
+    
+    // Verificar que el rol sea válido
+    if (!["admin", "usuario"].includes(userRole)) {
+      throw new AppError("Rol inválido", 400);
+    }
+
+    // Hashear la contraseña antes de enviarla al controlador
+    const hashedPassword = await hashPassword(password);
+    
+    let usuario = await agregarUsuario(userName, hashedPassword, correoElectronico, userRole);
+
+    // Generar tokens usando la contraseña original (no la hasheada)
+    const { accessToken, refreshToken } = await login(userName, password);
+
+    // Preparar respuesta sin exponer datos sensibles
     const userResponse = {
       id: usuario.id,
       userName: usuario.userName,
       correoElectronico: usuario.correoElectronico,
-      rol: usuario.rol
+      rol: usuario.rol,
+      accessToken,
+      refreshToken
     };
 
     res.status(201).json(userResponse);
   } catch (error) {
+    // Manejar errores específicos
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      if (error.fields.correoElectronico) {
+        return next(new AppError("El correo electrónico ya está registrado", 400));
+      }
+      if (error.fields.userName) {
+        return next(new AppError("El nombre de usuario ya está en uso", 400));
+      }
+    }
     next(error);
   }
 });

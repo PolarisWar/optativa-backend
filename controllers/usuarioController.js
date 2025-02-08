@@ -2,23 +2,40 @@ const Usuario = require('../models/usuarios');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const { hashPassword, comparePassword } = require('../helpers/hashPass');
+const { Op } = require('sequelize');
 
 const agregarUsuario = async (userName, password, correoElectronico, rol) => {
   try {
+    // Verificar si el usuario ya existe
+    const existingUser = await Usuario.findOne({
+      where: {
+        [Op.or]: [
+          { userName: userName },
+          { correoElectronico: correoElectronico }
+        ]
+      }
+    });
 
-    console.log(userName, password, correoElectronico, rol)
+    if (existingUser) {
+      if (existingUser.userName === userName) {
+        throw new Error('El nombre de usuario ya está en uso');
+      }
+      if (existingUser.correoElectronico === correoElectronico) {
+        throw new Error('El correo electrónico ya está registrado');
+      }
+    }
 
-    const hash = await hashPassword(password);
-
-
+    // Crear el nuevo usuario con la contraseña ya hasheada
     const nuevoUsuario = await Usuario.create({
       userName,
-      password: hash,
+      password, // password ya viene hasheada desde la ruta
       correoElectronico,
       rol,
     });
 
-    return nuevoUsuario;
+    // Retornar usuario sin la contraseña
+    const { password: _, ...usuarioSinPassword } = nuevoUsuario.toJSON();
+    return usuarioSinPassword;
   } catch (error) {
     throw error;
   }
