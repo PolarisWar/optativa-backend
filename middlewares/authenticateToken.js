@@ -9,15 +9,21 @@ if (!process.env.JWT_SECRET) {
 // Lista de rutas públicas que no requieren autenticación
 const publicRoutes = [
   '/',
-  '/login',
-  '/register',
-  // Agrega aquí otras rutas públicas
+  '/auth/login',
+  '/auth/register',
+  '/auth/refreshToken',
+  '/usuarios'  // ruta para crear usuario
 ];
 
 const authenticateToken = async (req, res, next) => {
   try {
-    // Verificar si la ruta es pública
+    // Verificar si la ruta es pública usando path exacto
     if (publicRoutes.includes(req.path)) {
+      return next();
+    }
+
+    // Verificar si la ruta comienza con /auth/ (para rutas de autenticación)
+    if (req.path.startsWith('/auth/')) {
       return next();
     }
 
