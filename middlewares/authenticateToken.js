@@ -1,12 +1,26 @@
 const jwt = require('jsonwebtoken');
 const AppError = require('../errors/AppError');
 const Usuario = require("../models/usuarios")
+
 if (!process.env.JWT_SECRET) {
   throw new Error('La clave secreta para firmar el token no está definida');
 }
 
+// Lista de rutas públicas que no requieren autenticación
+const publicRoutes = [
+  '/',
+  '/login',
+  '/register',
+  // Agrega aquí otras rutas públicas
+];
+
 const authenticateToken = async (req, res, next) => {
   try {
+    // Verificar si la ruta es pública
+    if (publicRoutes.includes(req.path)) {
+      return next();
+    }
+
     const authHeader = req.headers.authorization;
     
     if (!authHeader) {
@@ -35,11 +49,11 @@ const authenticateToken = async (req, res, next) => {
     // Resto de la lógica de autorización para otras rutas
     if (usuario.rol === 'admin') {
       req.userData = { userId: decoded.id, rol: 'admin' };
-      next();
+      return next();
     } else if (usuario.rol === 'usuario') {
-      if (req.url === '/recetas' || req.url === '/categorias' || req.url === '/ingredientes') {
+      if (req.path === '/recetas' || req.path === '/categorias' || req.path === '/ingredientes') {
         req.userData = { userId: decoded.id, rol: 'usuario' };
-        next();
+        return next();
       } else {
         return res.status(403).json({ error: 'Usted no posee el rol necesario para realizar esa acción' });
       }
