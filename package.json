@@ -6,7 +6,8 @@
   "author": "Gabriel <gpereirasantos2002@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "seed:admin": "node -e \"require('./backend/seeders/adminSeeder.js')()\""
   },
   "dependencies": {
     "@nuxtjs/sitemap": "^7.2.4",
